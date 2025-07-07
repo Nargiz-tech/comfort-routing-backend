@@ -17,7 +17,9 @@ CORS(app)
 def get_db_connection():
     # Define DB_CONFIG here, reading directly from os.environ
     # This ensures variables are read when the function is called, not on import
-    DB_CONFIG_LOCAL = {
+    # IMPORTANT: Use the exact keys that psycopg2.connect expects (dbname, user, password, host, port)
+    # and ensure they correctly map to your environment variable names.
+    db_config_local = {
         'dbname': os.environ.get('DB_NAME'),
         'user': os.environ.get('DB_USER'),
         'password': os.environ.get('DB_PASSWORD'),
@@ -26,22 +28,16 @@ def get_db_connection():
     }
 
     # Optional: Add a check to ensure all necessary variables are set before connecting
-    required_vars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST']
-    for var_name in required_vars:
-        if DB_CONFIG_LOCAL.get(var_name.replace('DB_', '').lower()) is None: # Adjust key name for DB_CONFIG_LOCAL
+    required_keys = ['dbname', 'user', 'password', 'host'] # Keys expected by psycopg2.connect
+    for key in required_keys:
+        if db_config_local.get(key) is None:
             # This print will appear if a variable is truly missing when get_db_connection is called
-            print(f"ERROR: Database environment variable {var_name} is not set.")
-            raise ValueError(f"Missing database environment variable: {var_name}")
+            print(f"ERROR: Database configuration key '{key}' is missing or None. Corresponding environment variable might not be set.")
+            raise ValueError(f"Missing database configuration: {key}")
 
     try:
-        # Attempt to connect using DB_CONFIG_LOCAL
-        conn = psycopg2.connect(
-            dbname=DB_CONFIG_LOCAL['dbname'],
-            user=DB_CONFIG_LOCAL['user'],
-            password=DB_CONFIG_LOCAL['password'],
-            host=DB_CONFIG_LOCAL['host'],
-            port=DB_CONFIG_LOCAL['port']
-        )
+        # Attempt to connect using db_config_local
+        conn = psycopg2.connect(**db_config_local) # Pass the dictionary directly
         return conn
     except Exception as e:
         # Log the specific database connection error for debugging
