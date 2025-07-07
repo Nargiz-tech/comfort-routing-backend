@@ -1,0 +1,30 @@
+# Python specific
+__pycache__/
+*.pyc
+.Python
+env/
+venv/
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# Environment variables
+.env
+config.py  # <-- IMPORTANT: If config.py contains sensitive data, IGNORE IT!
+           #    If config.py only reads from env vars, you can include it.
+           #    Given your current config.py, it's safe to include.
+           #    However, if you had a separate local_config.py with secrets, ignore that.
+
+# Database files (if you had local SQLite or similar)
+*.sqlite3
+*.db
+*.bak
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
