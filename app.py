@@ -3,12 +3,36 @@ from flask_cors import CORS
 import psycopg2
 import json
 import traceback
-from config import DB_CONFIG # Assumes your DB_CONFIG is in a config.py file
+import os # Import os to get environment variables for port
+from config import DB_CONFIG # Import DB_CONFIG, but its values will be accessed later
 
 # Initialize the Flask application
 app = Flask(__name__)
 # Enable Cross-Origin Resource Sharing (CORS) to allow requests from your frontend
 CORS(app)
+
+# --- Database Connection Function ---
+# This function will establish a database connection.
+# It's called only when a request needs to interact with the DB,
+# ensuring environment variables are fully loaded.
+def get_db_connection():
+    try:
+        # Attempt to connect using DB_CONFIG.
+        # If any DB_CONFIG value is None (because env var wasn't set),
+        # psycopg2.connect will raise an error, which is desired behavior.
+        conn = psycopg2.connect(
+            dbname=DB_CONFIG['dbname'],
+            user=DB_CONFIG['user'],
+            password=DB_CONFIG['password'],
+            host=DB_CONFIG['host'],
+            port=DB_CONFIG['port']
+        )
+        return conn
+    except Exception as e:
+        # Log the specific database connection error for debugging
+        print(f"ERROR: Failed to connect to the database. Details: {e}")
+        # Re-raise the exception so the calling route handler can catch it
+        raise ConnectionError("Could not establish database connection.") from e
 
 @app.route('/')
 def home():
@@ -58,10 +82,11 @@ def generate_route():
     conn = None
     cursor = None
     try:
-        # Establish a connection to the PostgreSQL database
-        conn = psycopg2.connect(**DB_CONFIG)
+        # Establish a connection to the PostgreSQL database using the new function
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT current_user;")
+        # This print will now appear after successful connection, not on startup
         print("👤 Current DB User:", cursor.fetchone())
 
         # Find the nearest graph node (vertex) in the 'munich_roads_vertices_pgr' table
@@ -356,4 +381,6 @@ JOIN shortest_route sr ON r.gid = sr.edge;
 
 # Run the Flask application in debug mode if executed directly
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Use 0.0.0.0 for host to make it accessible from outside the container
+    # Use PORT environment variable provided by Render, default to 5000 for local dev
+    app.run(debug=True, host='0.0.0.0', port=os.environ.get('PORT', 5000))
