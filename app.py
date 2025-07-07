@@ -3,8 +3,7 @@ from flask_cors import CORS
 import psycopg2
 import json
 import traceback
-import os # Import os to get environment variables for port
-from config import DB_CONFIG # Import DB_CONFIG, but its values will be accessed later
+import os # Import os to get environment variables for port and DB_CONFIG
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -16,16 +15,32 @@ CORS(app)
 # It's called only when a request needs to interact with the DB,
 # ensuring environment variables are fully loaded.
 def get_db_connection():
+    # Define DB_CONFIG here, reading directly from os.environ
+    # This ensures variables are read when the function is called, not on import
+    DB_CONFIG_LOCAL = {
+        'dbname': os.environ.get('DB_NAME'),
+        'user': os.environ.get('DB_USER'),
+        'password': os.environ.get('DB_PASSWORD'),
+        'host': os.environ.get('DB_HOST'),
+        'port': os.environ.get('DB_PORT', '5432') # Default to 5432 if not set
+    }
+
+    # Optional: Add a check to ensure all necessary variables are set before connecting
+    required_vars = ['DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST']
+    for var_name in required_vars:
+        if DB_CONFIG_LOCAL.get(var_name.replace('DB_', '').lower()) is None: # Adjust key name for DB_CONFIG_LOCAL
+            # This print will appear if a variable is truly missing when get_db_connection is called
+            print(f"ERROR: Database environment variable {var_name} is not set.")
+            raise ValueError(f"Missing database environment variable: {var_name}")
+
     try:
-        # Attempt to connect using DB_CONFIG.
-        # If any DB_CONFIG value is None (because env var wasn't set),
-        # psycopg2.connect will raise an error, which is desired behavior.
+        # Attempt to connect using DB_CONFIG_LOCAL
         conn = psycopg2.connect(
-            dbname=DB_CONFIG['dbname'],
-            user=DB_CONFIG['user'],
-            password=DB_CONFIG['password'],
-            host=DB_CONFIG['host'],
-            port=DB_CONFIG['port']
+            dbname=DB_CONFIG_LOCAL['dbname'],
+            user=DB_CONFIG_LOCAL['user'],
+            password=DB_CONFIG_LOCAL['password'],
+            host=DB_CONFIG_LOCAL['host'],
+            port=DB_CONFIG_LOCAL['port']
         )
         return conn
     except Exception as e:
