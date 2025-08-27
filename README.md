@@ -45,7 +45,7 @@ OpenStreetMap (OSM) – pedestrian network and amenities.
 Access via Overpass API or Geofabrik
 
 Digital Elevation Models (DEM) – slope/terrain data.
-Example: (https://geodaten.bayern.de/opengeodata/OpenDa taDetail.html?pn=dgm1)
+Example: (https://geodaten.bayern.de/opengeodata/OpenDataDetail.html?pn=dgm1)
 
 Reproducing the Data
 
